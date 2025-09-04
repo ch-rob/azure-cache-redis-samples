@@ -1,0 +1,118 @@
+PS C:\Users\crv-azureuser\Downloads\net8.0> .\Redistest.exe
+Primary Redis cache: redis-central-rr.centralus.redis.azure.net
+Failover Redis cache: failover-amr.eastus2.redis.azure.net
+Authentication type: ACCESS_KEY
+?? Attempting to connect to primary Redis: redis-central-rr.centralus.redis.azure.net
+Connecting to redis-central-rr.centralus.redis.azure.net with access key...
+? Successfully connected to primary Redis: redis-central-rr.centralus.redis.azure.net
+Running... Press any key to quit.
+
+Thread 1: Cache command: PING
+Thread 1: Cache response: PONG
+
+Thread 1: Cache command: GET DateBasedMessage via StringGetAsync()
+Thread 1: Cache GET response 1: 2025-09-04T14:51:58.5382500Z: Message from Thread 1
+
+Thread 1: Cache command: SET DateBasedMessage "2025-09-04T17:22:16.0323029Z: Message from Thread 1" via StringSetAsync()
+Thread 1: Cache SET response 2: True
+
+Thread 1: Cache command: GET DateBasedMessage via StringGetAsync()
+Thread 1: Cache response 3: 2025-09-04T17:22:16.0323029Z: Message from Thread 1
+
+Thread 1: Cache response from storing serialized Employee object: True
+Thread 1: Deserialized Employee .NET object:
+
+Thread 1: Employee.Name : Davide Columbo
+Thread 1: Employee.Id   : 007
+Thread 1: Employee.Age  : 100
+
+PS C:\Users\crv-azureuser\Downloads\net8.0> ..\TrafficBlock.ps1
+
+
+Name                          : {5751018b-ddd5-4914-9ef2-bc4a866abca4}
+DisplayName                   : Block Access to 10.2.1.4
+Description                   :
+DisplayGroup                  :
+Group                         :
+Enabled                       : True
+Profile                       : Any
+Platform                      : {}
+Direction                     : Outbound
+Action                        : Block
+EdgeTraversalPolicy           : Block
+LooseSourceMapping            : False
+LocalOnlyMapping              : False
+Owner                         :
+PrimaryStatus                 : OK
+Status                        : The rule was parsed successfully from the store. (65536)
+EnforcementStatus             : NotApplicable
+PolicyStoreSource             : PersistentStore
+PolicyStoreSourceType         : Local
+RemoteDynamicKeywordAddresses : {}
+PolicyAppId                   :
+
+
+
+PS C:\Users\crv-azureuser\Downloads\net8.0> .\Redistest.exe
+Primary Redis cache: redis-central-rr.centralus.redis.azure.net
+Failover Redis cache: failover-amr.eastus2.redis.azure.net
+Authentication type: ACCESS_KEY
+?? Attempting to connect to primary Redis: redis-central-rr.centralus.redis.azure.net
+Connecting to redis-central-rr.centralus.redis.azure.net with access key...
+? Failed to connect to primary Redis redis-central-rr.centralus.redis.azure.net: It was not possible to connect to the redis server(s). Error connecting right now. To allow this multiplexer to continue retrying until it's able to connect, use abortConnect=false in your connection string or AbortOnConnectFail=false; in your code.
+?? Circuit breaker activated - attempting failover to: failover-amr.eastus2.redis.azure.net
+Connecting to failover-amr.eastus2.redis.azure.net with access key...
+? Successfully connected to failover Redis: failover-amr.eastus2.redis.azure.net
+Running... Press any key to quit.
+
+Thread 1: Cache command: PING
+Thread 1: Cache response: PONG
+
+Thread 1: Cache command: GET DateBasedMessage via StringGetAsync()
+Thread 1: Cache GET response 1: 2025-09-04T17:22:16.0323029Z: Message from Thread 1
+
+Thread 1: Cache command: SET DateBasedMessage "2025-09-04T17:23:32.0544620Z: Message from Thread 1" via StringSetAsync()
+Thread 1: Cache SET response 2: True
+
+Thread 1: Cache command: GET DateBasedMessage via StringGetAsync()
+Thread 1: Cache response 3: 2025-09-04T17:23:32.0544620Z: Message from Thread 1
+
+Thread 1: Cache response from storing serialized Employee object: True
+Thread 1: Deserialized Employee .NET object:
+
+Thread 1: Employee.Name : Davide Columbo
+Thread 1: Employee.Id   : 007
+Thread 1: Employee.Age  : 100
+
+PS C:\Users\crv-azureuser\Downloads\net8.0> ..\TrafficAllow.ps1
+PS C:\Users\crv-azureuser\Downloads\net8.0> .\Redistest.exe
+Primary Redis cache: redis-central-rr.centralus.redis.azure.net
+Failover Redis cache: failover-amr.eastus2.redis.azure.net
+Authentication type: ACCESS_KEY
+?? Attempting to connect to primary Redis: redis-central-rr.centralus.redis.azure.net
+Connecting to redis-central-rr.centralus.redis.azure.net with access key...
+? Successfully connected to primary Redis: redis-central-rr.centralus.redis.azure.net
+Running... Press any key to quit.
+
+Thread 1: Cache command: PING
+Thread 1: Cache response: PONG
+
+Thread 1: Cache command: GET DateBasedMessage via StringGetAsync()
+Thread 1: Cache GET response 1: 2025-09-04T17:23:32.0544620Z: Message from Thread 1
+
+Thread 1: Cache command: SET DateBasedMessage "2025-09-04T17:24:14.4299572Z: Message from Thread 1" via StringSetAsync()
+Thread 1: Cache SET response 2: True
+
+Thread 1: Cache command: GET DateBasedMessage via StringGetAsync()
+Thread 1: Cache response 3: 2025-09-04T17:24:14.4299572Z: Message from Thread 1
+
+Thread 1: Cache response from storing serialized Employee object: True
+Thread 1: Deserialized Employee .NET object:
+
+Thread 1: Employee.Name : Davide Columbo
+Thread 1: Employee.Id   : 007
+Thread 1: Employee.Age  : 100
+
+PS C:\Users\crv-azureuser\Downloads\net8.0>
+
+

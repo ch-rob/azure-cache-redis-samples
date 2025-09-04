@@ -1,0 +1,1 @@
+New-NetFirewallRule -DisplayName "Block Access to 10.2.1.4" -Direction Outbound -Protocol Any -Action Block -RemoteAddress 10.2.1.4

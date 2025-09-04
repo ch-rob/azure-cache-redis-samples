@@ -1,0 +1,1 @@
+Remove-NetFirewallRule -DisplayName "Block Access to 10.2.1.4"

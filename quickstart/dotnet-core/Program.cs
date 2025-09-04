@@ -2,6 +2,7 @@
 using StackExchange.Redis;
 using System;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Redistest
@@ -36,9 +37,12 @@ namespace Redistest
             
             string redisHostName = configuration["RedisHostName"];
             string redisAccessKey = configuration["RedisAccessKey"];
+            string redisHostNameFailover = configuration["RedisHostName-Failover"];
+            string redisAccessKeyFailover = configuration["RedisAccessKey-Failover"];
             string authenticationType = configuration["AuthenticationType"] ?? "WORKLOAD_IDENTITY";
             
-            Console.WriteLine($"Using Redis cache at {redisHostName}");
+            Console.WriteLine($"Primary Redis cache: {redisHostName}");
+            Console.WriteLine($"Failover Redis cache: {redisHostNameFailover}");
             Console.WriteLine($"Authentication type: {authenticationType}");
 
             // Validate required parameters based on authentication type
@@ -50,6 +54,11 @@ namespace Redistest
                         Console.Error.WriteLine("ACCESS_KEY authentication selected but no access key provided in configuration.");
                         return;
                     }
+                    if (string.IsNullOrEmpty(redisAccessKeyFailover))
+                    {
+                        Console.Error.WriteLine("ACCESS_KEY authentication selected but no failover access key provided in configuration.");
+                        return;
+                    }
                     break;
                 case "WORKLOAD_IDENTITY":
                     // No additional validation needed for workload identity
@@ -59,7 +68,11 @@ namespace Redistest
                     return;
             }
 
-            _redisConnection = await RedisConnection.InitializeAsync(redisHostName, redisAccessKey, authenticationType);
+            // Circuit breaker pattern: Try primary first, then failover
+            _redisConnection = await TryConnectWithCircuitBreaker(
+                redisHostName, redisAccessKey, 
+                redisHostNameFailover, redisAccessKeyFailover, 
+                authenticationType);
 
             try
             {
@@ -72,6 +85,78 @@ namespace Redistest
             finally
             {
                 _redisConnection.Dispose();
+            }
+        }
+
+        private static async Task<RedisConnection> TryConnectWithCircuitBreaker(
+            string primaryHost, string primaryKey,
+            string failoverHost, string failoverKey,
+            string authenticationType)
+        {
+            const int connectionTimeoutMs = 5000; // 5 second timeout
+            
+            // Try primary Redis instance first
+            Console.WriteLine($"🔄 Attempting to connect to primary Redis: {primaryHost}");
+            try
+            {
+                var primaryConnection = await Task.Run(async () =>
+                {
+                    var cts = new CancellationTokenSource(connectionTimeoutMs);
+                    try
+                    {
+                        return await RedisConnection.InitializeAsync(primaryHost, primaryKey, authenticationType);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        throw new TimeoutException($"Connection to primary Redis {primaryHost} timed out after {connectionTimeoutMs}ms");
+                    }
+                });
+
+                // Test the connection with a simple ping
+                await primaryConnection.BasicRetryAsync(async (db) => await db.ExecuteAsync("PING"));
+                
+                Console.WriteLine($"✅ Successfully connected to primary Redis: {primaryHost}");
+                return primaryConnection;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Failed to connect to primary Redis {primaryHost}: {ex.Message}");
+                
+                // Circuit breaker: Try failover Redis instance
+                if (!string.IsNullOrEmpty(failoverHost))
+                {
+                    Console.WriteLine($"🔄 Circuit breaker activated - attempting failover to: {failoverHost}");
+                    try
+                    {
+                        var failoverConnection = await Task.Run(async () =>
+                        {
+                            var cts = new CancellationTokenSource(connectionTimeoutMs);
+                            try
+                            {
+                                return await RedisConnection.InitializeAsync(failoverHost, failoverKey, authenticationType);
+                            }
+                            catch (OperationCanceledException)
+                            {
+                                throw new TimeoutException($"Connection to failover Redis {failoverHost} timed out after {connectionTimeoutMs}ms");
+                            }
+                        });
+
+                        // Test the failover connection
+                        await failoverConnection.BasicRetryAsync(async (db) => await db.ExecuteAsync("PING"));
+                        
+                        Console.WriteLine($"✅ Successfully connected to failover Redis: {failoverHost}");
+                        return failoverConnection;
+                    }
+                    catch (Exception failoverEx)
+                    {
+                        Console.WriteLine($"❌ Failed to connect to failover Redis {failoverHost}: {failoverEx.Message}");
+                        throw new InvalidOperationException($"Both primary ({primaryHost}) and failover ({failoverHost}) Redis instances are unavailable. Primary error: {ex.Message}, Failover error: {failoverEx.Message}");
+                    }
+                }
+                else
+                {
+                    throw new InvalidOperationException($"Primary Redis {primaryHost} is unavailable and no failover configured. Error: {ex.Message}");
+                }
             }
         }
 
