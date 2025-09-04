@@ -66,13 +66,8 @@ namespace Redistest
                 // Perform cache operations using the cache object...
                 Console.WriteLine("Running... Press any key to quit.");
 
-                // while (!Console.KeyAvailable)
-                // {
-                    Task thread1 = Task.Run(() => RunRedisCommandsAsync("Thread 1"));
-                    Task thread2 = Task.Run(() => RunRedisCommandsAsync("Thread 2"));
-
-                    Task.WaitAll(thread1, thread2);
-                // }
+                Task thread1 = Task.Run(() => RunRedisCommandsAsync("Thread 1"));
+                Task.WaitAll(thread1);
             }
             finally
             {
@@ -89,21 +84,21 @@ namespace Redistest
             Console.WriteLine($"{prefix}: Cache response: {pingResult}");
 
             // Simple get and put of integral data types into the cache
-            string key = "Message";
-            string value = "Hello! The cache is working from a .NET Core console app!";
+            string key = "DateBasedMessage";
+            string value = $"{DateTime.UtcNow.ToString("o")}: Message from {prefix}";
 
-            // Clear the key from the database first
-            if (prefix == "Thread 1")
-            {
-                Console.WriteLine($"{Environment.NewLine}{prefix}: Cache command: DEL {key} via KeyDeleteAsync()");
-                bool deleteResult = await _redisConnection.BasicRetryAsync(async (db) => await db.KeyDeleteAsync(key));
-                Console.WriteLine($"{prefix}: Cache DEL response: {deleteResult}");
-            }
-            else
-            {
-                Console.WriteLine($"{Environment.NewLine}{prefix}: Taking a quick nap");
-                await Task.Delay(100); 
-            }
+            // // Clear the key from the database first
+            // if (prefix == "Thread 1")
+            // {
+            //     Console.WriteLine($"{Environment.NewLine}{prefix}: Cache command: DEL {key} via KeyDeleteAsync()");
+            //     bool deleteResult = await _redisConnection.BasicRetryAsync(async (db) => await db.KeyDeleteAsync(key));
+            //     Console.WriteLine($"{prefix}: Cache DEL response: {deleteResult}");
+            // }
+            // else
+            // {
+            //     Console.WriteLine($"{Environment.NewLine}{prefix}: Taking a quick nap");
+            //     await Task.Delay(100); 
+            // }
 
             Console.WriteLine($"{Environment.NewLine}{prefix}: Cache command: GET {key} via StringGetAsync()");
             RedisValue getMessageResult = await _redisConnection.BasicRetryAsync(async (db) => await db.StringGetAsync(key));
